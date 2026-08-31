@@ -121,7 +121,7 @@ stages:
         targetPath: '$(Build.ArtifactStagingDirectory)/auth-api'
         artifact: auth-api
 
-stage: BuildReporting
+- stage: BuildReporting
   displayName: Build Reporting Image
   jobs:
   - job: BuildReporting
@@ -136,7 +136,7 @@ stage: BuildReporting
       displayName: Build and push reporting image
       inputs:
         command: buildAndPush
-        containerRegistry: 'acr-service-connection'
+        containerRegistry: 'dockerRegistryConnection'
         repository: 'reporting-service'
         Dockerfile: 'PythonServices/reporting_service/Dockerfile'
         tags: |
