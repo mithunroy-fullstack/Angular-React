@@ -22,12 +22,37 @@ def get_attendance_from_db():
 
 
 def calculate_attendance_rate(df):
-    # Group by both StudentId and Name so Name is preserved in the output
-    summary = df.groupby(["StudentId", "Name"])["Status"].apply(
-        lambda x: ((x == "Present").mean() * 100)
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["StudentId", "Name", "attendance_rate"])
+
+    student_key = next(
+        (col for col in df.columns if str(col).strip().lower() in {"studentid", "student_id"}),
+        None,
+    )
+    name_key = next(
+        (col for col in df.columns if str(col).strip().lower() in {"name", "studentname"}),
+        None,
+    )
+    status_key = next(
+        (col for col in df.columns if str(col).strip().lower() in {"status", "attendance_status"}),
+        None,
+    )
+
+    if not student_key or not name_key or not status_key:
+        raise ValueError(
+            "Attendance data must include student identifier, name, and status columns. "
+            f"Available columns: {list(df.columns)}"
+        )
+
+    normalized_df = df[[student_key, name_key, status_key]].copy()
+    normalized_df.columns = ["student_id", "name", "status"]
+    normalized_df["status"] = normalized_df["status"].astype(str).str.strip().str.lower()
+
+    summary = normalized_df.groupby(["student_id", "name"])["status"].apply(
+        lambda x: ((x == "present").mean() * 100)
     ).reset_index(name="attendance_rate")
-    
-    # Clean up long floating points to 2 decimal places
+
     summary["attendance_rate"] = summary["attendance_rate"].round(2)
+    summary = summary.rename(columns={"student_id": student_key, "name": name_key})
     return summary
 
