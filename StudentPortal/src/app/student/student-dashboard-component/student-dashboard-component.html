@@ -1,0 +1,180 @@
+<div class="dashboard-container">
+
+  <!-- ========================================= -->
+  <!-- HEADER -->
+  <!-- ========================================= -->
+  <div class="dashboard-header">
+    <div>
+      <h1>Student Management</h1>     
+      <p>Manage students using StudentService API</p>
+    </div>
+    <div class="student-count">
+      Total Students: <strong>{{ students.length }}</strong>
+    </div>
+     <button class="btn logout" (click)="logout()">Logout</button>
+  </div>
+
+  <!-- ========================================= -->
+  <!-- SUCCESS MESSAGE -->
+  <!-- ========================================= -->
+  <div class="alert success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <!-- ========================================= -->
+  <!-- ERROR MESSAGE -->
+  <!-- ========================================= -->
+  <div class="alert error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <!-- ========================================= -->
+  <!-- STUDENT FORM -->
+  <!-- ========================================= -->
+  <div class="card form-card">
+    <h2>{{ isEditMode ? 'Update Student' : 'Add New Student' }}</h2>
+
+    <form [formGroup]="studentForm" (ngSubmit)="saveStudent()">
+      <!-- ID -->
+      <div class="form-group" *ngIf="isEditMode">
+        <label>Student ID</label>
+        <input type="number" formControlName="id" readonly />
+      </div>
+
+      <!-- NAME -->
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" formControlName="name" placeholder="Enter student name" />
+        <small class="validation-error" *ngIf="name?.invalid && name?.touched">
+          Name is required and must contain at least 3 characters.
+        </small>
+      </div>
+
+      <!-- EMAIL -->
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" formControlName="email" placeholder="Enter email address" />
+        <small class="validation-error" *ngIf="email?.invalid && email?.touched">
+          Please enter a valid email.
+        </small>
+      </div>
+
+      <!-- BUTTONS -->
+      <div class="form-buttons">
+        <button type="submit" class="btn primary">
+          {{ isEditMode ? 'Update Student' : 'Add Student' }}
+        </button>
+        <button type="button" class="btn secondary" *ngIf="isEditMode" (click)="cancelEdit()">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ========================================= -->
+  <!-- STUDENT LIST -->
+  <!-- ========================================= -->
+  <div class="card">
+    <div class="table-header">
+      <h2>Student List</h2>
+      <button class="btn refresh" (click)="$event.stopPropagation(); loadStudents()">
+        Refresh
+      </button>
+    </div>
+
+    <!-- LOADING SPINNER BAR -->
+    <div class="loading" *ngIf="loading">
+      Loading students...
+    </div>
+
+    <!-- RESTORED TABLE CONTAINER -->
+    <div class="table-container" *ngIf="!loading">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>            
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let student of students">
+            <td>{{ student.id }}</td>
+            <td>{{ student.name }}</td>
+            <td>{{ student.email }}</td>            
+            <td class="actions">
+              <button class="btn edit" (click)="editStudent(student)">Edit</button>
+              <button class="btn delete" (click)="deleteStudent(student.id)">Delete</button>
+            </td>
+          </tr>
+
+          <!-- NO DATA FOUND ROW (Fixed to 4 columns matching header) -->
+          <tr *ngIf="students.length === 0">
+            <td colspan="4" class="no-data">
+              No students found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="dashboard-card">
+  <h3>Student Attendance Summary</h3>
+  
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <table *ngIf="attendanceData.length > 0" class="reporting-table">
+    <thead>
+      <tr>
+        <th>Student Name</th>
+        <th>Attendance Rate</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let record of attendanceData">
+        <td>{{ record.Name }}</td>
+        <td>{{ record.attendance_rate }}%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="attendanceData.length === 0 && !errorMessage">
+    Loading report analytics...
+  </div>
+</div>
+
+<!-- Change *ngInterfere to *ngIf -->
+<div class="predictions-section" *ngIf="predictionsData.length > 0">
+  <h3>Student Performance Predictions</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Student Name</th>
+        <th>Course</th>
+        <th>Attendance %</th>
+        <th>Current Score</th>
+        <th>Grade</th>
+        <th>Predicted Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let pred of predictionsData">
+        <td>{{ pred.Name }}</td>
+        <td>{{ pred.courseName }}</td>
+        <td>{{ pred.attendance_rate }}%</td>
+        <td>{{ pred.score }}</td>
+        <td>{{ pred.grade }}</td>
+        <td><strong>{{ pred.predicted_score }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+
+</div>

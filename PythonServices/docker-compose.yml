@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  reporting_service:
+    build: ./reporting_service
+    ports:
+      - "8001:8000"
+
+  data_processing_service:
+    build: ./data_processing_service
+    ports:
+      - "8002:8000"
+
+  ai_ml_service:
+    build: ./ai_ml_service
+    ports:
+      - "8003:8000"
+ 

@@ -1,0 +1,147 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: BuildAngular
+  displayName: Build Angular
+  jobs:
+  - job: Angular
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+
+    - script: |
+        cd StudentPortal
+        npm ci
+        npm run build
+      displayName: Build Angular application
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'StudentPortal/dist'
+        artifact: angular
+
+- stage: BuildReact
+  displayName: Build React
+  jobs:
+  - job: React
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+
+    - script: |
+        cd course-portal
+        npm ci
+        npm run build
+      displayName: Build React application
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'course-portal/dist'
+        artifact: react
+
+- stage: BuildDotNet
+  displayName: Build and Package .NET APIs
+  jobs:
+  - job: BuildApis
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: sdk
+        version: '8.x'
+
+    - task: DotNetCoreCLI@2
+      displayName: Restore .NET projects
+      inputs:
+        command: restore
+        projects: |
+          StudentService/StudentService.csproj
+          CourseService/CourseService.csproj
+          AuthService/AuthService.csproj
+
+    - task: DotNetCoreCLI@2
+      displayName: Build .NET APIs
+      inputs:
+        command: build
+        projects: |
+          StudentService/StudentService.csproj
+          CourseService/CourseService.csproj
+          AuthService/AuthService.csproj
+        arguments: '--configuration Release --no-restore'
+
+    - task: DotNetCoreCLI@2
+      displayName: Publish Student API
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: 'StudentService/StudentService.csproj'
+        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/student-api'
+        zipAfterPublish: true
+
+    - task: DotNetCoreCLI@2
+      displayName: Publish Course API
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: 'CourseService/CourseService.csproj'
+        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/course-api'
+        zipAfterPublish: true
+
+    - task: DotNetCoreCLI@2
+      displayName: Publish Auth API
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: 'AuthService/AuthService.csproj'
+        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/auth-api'
+        zipAfterPublish: true
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Student API artifact
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/student-api'
+        artifact: student-api
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Course API artifact
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/course-api'
+        artifact: course-api
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Auth API artifact
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/auth-api'
+        artifact: auth-api
+
+stage: BuildReporting
+  displayName: Build Reporting Image
+  jobs:
+  - job: BuildReporting
+    steps:
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r PythonServices/reporting_service/requirements.txt
+        pytest
+      displayName: Test Python service
+
+    - task: Docker@2
+      displayName: Build and push reporting image
+      inputs:
+        command: buildAndPush
+        containerRegistry: 'acr-service-connection'
+        repository: 'reporting-service'
+        Dockerfile: 'PythonServices/reporting_service/Dockerfile'
+        tags: |
+          $(Build.BuildId)
+
+
+
+
