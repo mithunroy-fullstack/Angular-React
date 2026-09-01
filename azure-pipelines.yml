@@ -142,6 +142,59 @@ stages:
         tags: |
           $(Build.BuildId)
 
+- stage: Deploy
+  displayName: Deploy to AKS Staging
+  dependsOn:
+    - BuildAngular
+    - BuildReact
+    - BuildDotNet
+    - BuildReporting
+  jobs:
+  - deployment: DeployServices
+    environment: 'staging'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              buildType: 'current'
+              targetPath: '$(Pipeline.Workspace)/artifacts'
 
+          # Deploy .NET APIs
+          - task: KubernetesManifest@1
+            displayName: Deploy Student API
+            inputs:
+              action: deploy
+              kubernetesServiceConnection: 'aksConnection'
+              manifests: 'k8s/student-deployment.yaml'
+              containers: |
+                fullstackregistry.azurecr.io/student-api:$(Build.BuildId)
 
+          - task: KubernetesManifest@1
+            displayName: Deploy Course API
+            inputs:
+              action: deploy
+              kubernetesServiceConnection: 'aksConnection'
+              manifests: 'k8s/course-deployment.yaml'
+              containers: |
+                fullstackregistry.azurecr.io/course-api:$(Build.BuildId)
 
+          - task: KubernetesManifest@1
+            displayName: Deploy Auth API
+            inputs:
+              action: deploy
+              kubernetesServiceConnection: 'aksConnection'
+              manifests: 'k8s/auth-deployment.yaml'
+              containers: |
+                fullstackregistry.azurecr.io/auth-api:$(Build.BuildId)
+
+          # Deploy Python Reporting Service
+          - task: KubernetesManifest@1
+            displayName: Deploy Reporting Service
+            inputs:
+              action: deploy
+              kubernetesServiceConnection: 'aksConnection'
+              manifests: 'k8s/reporting-deployment.yaml'
+              containers: |
+                fullstackregistry.azurecr.io/reporting-service:$(Build.BuildId)
