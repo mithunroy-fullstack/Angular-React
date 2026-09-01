@@ -76,50 +76,36 @@ stages:
           AuthService/AuthService.csproj
         arguments: '--configuration Release --no-restore'
 
-    - task: DotNetCoreCLI@2
-      displayName: Publish Student API
+    # 🧩 Build and push Docker images for each API
+    - task: Docker@2
+      displayName: Build and push Student API image
       inputs:
-        command: publish
-        publishWebProjects: false
-        projects: 'StudentService/StudentService.csproj'
-        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/student-api'
-        zipAfterPublish: true
+        command: buildAndPush
+        containerRegistry: 'dockerRegistryConnection'
+        repository: 'student-api'
+        Dockerfile: 'StudentService/Dockerfile'
+        tags: |
+          $(Build.BuildId)
 
-    - task: DotNetCoreCLI@2
-      displayName: Publish Course API
+    - task: Docker@2
+      displayName: Build and push Course API image
       inputs:
-        command: publish
-        publishWebProjects: false
-        projects: 'CourseService/CourseService.csproj'
-        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/course-api'
-        zipAfterPublish: true
+        command: buildAndPush
+        containerRegistry: 'dockerRegistryConnection'
+        repository: 'course-api'
+        Dockerfile: 'CourseService/Dockerfile'
+        tags: |
+          $(Build.BuildId)
 
-    - task: DotNetCoreCLI@2
-      displayName: Publish Auth API
+    - task: Docker@2
+      displayName: Build and push Auth API image
       inputs:
-        command: publish
-        publishWebProjects: false
-        projects: 'AuthService/AuthService.csproj'
-        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/auth-api'
-        zipAfterPublish: true
-
-    - task: PublishPipelineArtifact@1
-      displayName: Publish Student API artifact
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)/student-api'
-        artifact: student-api
-
-    - task: PublishPipelineArtifact@1
-      displayName: Publish Course API artifact
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)/course-api'
-        artifact: course-api
-
-    - task: PublishPipelineArtifact@1
-      displayName: Publish Auth API artifact
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)/auth-api'
-        artifact: auth-api
+        command: buildAndPush
+        containerRegistry: 'dockerRegistryConnection'
+        repository: 'auth-api'
+        Dockerfile: 'AuthService/Dockerfile'
+        tags: |
+          $(Build.BuildId)
 
 - stage: BuildReporting
   displayName: Build Reporting Image
@@ -156,16 +142,13 @@ stages:
       runOnce:
         deploy:
           steps:
-          # 1️⃣ Checkout repo so k8s manifests are available
           - checkout: self
 
-          # 2️⃣ Download build artifacts
           - task: DownloadPipelineArtifact@2
             inputs:
               buildType: 'current'
               targetPath: '$(Pipeline.Workspace)/artifacts'
 
-          # 3️⃣ Deploy Student API
           - task: KubernetesManifest@1
             displayName: Deploy Student API
             inputs:
@@ -176,7 +159,6 @@ stages:
               containers: |
                 student-api=fullstackregistry.azurecr.io/student-api:$(Build.BuildId)
 
-          # 4️⃣ Deploy Course API
           - task: KubernetesManifest@1
             displayName: Deploy Course API
             inputs:
@@ -187,7 +169,6 @@ stages:
               containers: |
                 course-api=fullstackregistry.azurecr.io/course-api:$(Build.BuildId)
 
-          # 5️⃣ Deploy Auth API
           - task: KubernetesManifest@1
             displayName: Deploy Auth API
             inputs:
@@ -198,7 +179,6 @@ stages:
               containers: |
                 auth-api=fullstackregistry.azurecr.io/auth-api:$(Build.BuildId)
 
-          # 6️⃣ Deploy Reporting Service
           - task: KubernetesManifest@1
             displayName: Deploy Reporting Service
             inputs:
