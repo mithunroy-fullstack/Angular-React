@@ -156,12 +156,16 @@ stages:
       runOnce:
         deploy:
           steps:
+          # 1️⃣ Checkout repo so k8s manifests are available
+          - checkout: self
+
+          # 2️⃣ Download build artifacts
           - task: DownloadPipelineArtifact@2
             inputs:
               buildType: 'current'
               targetPath: '$(Pipeline.Workspace)/artifacts'
 
-          # Deploy .NET APIs
+          # 3️⃣ Deploy Student API
           - task: KubernetesManifest@1
             displayName: Deploy Student API
             inputs:
@@ -169,9 +173,9 @@ stages:
               kubernetesServiceConnection: 'aksConnection'
               manifests: '$(System.DefaultWorkingDirectory)/Angular-React/k8s/student-deployment.yaml'
               containers: |
-                    student-api=fullstackregistry.azurecr.io/student-api:$(Build.BuildId)
+                student-api=fullstackregistry.azurecr.io/student-api:$(Build.BuildId)
 
-
+          # 4️⃣ Deploy Course API
           - task: KubernetesManifest@1
             displayName: Deploy Course API
             inputs:
@@ -179,9 +183,9 @@ stages:
               kubernetesServiceConnection: 'aksConnection'
               manifests: '$(System.DefaultWorkingDirectory)/Angular-React/k8s/course-deployment.yaml'
               containers: |
-                    course-api=fullstackregistry.azurecr.io/course-api:$(Build.BuildId)
+                course-api=fullstackregistry.azurecr.io/course-api:$(Build.BuildId)
 
-
+          # 5️⃣ Deploy Auth API
           - task: KubernetesManifest@1
             displayName: Deploy Auth API
             inputs:
@@ -189,10 +193,9 @@ stages:
               kubernetesServiceConnection: 'aksConnection'
               manifests: '$(System.DefaultWorkingDirectory)/Angular-React/k8s/auth-deployment.yaml'
               containers: |
-                    auth-api=fullstackregistry.azurecr.io/auth-api:$(Build.BuildId)
+                auth-api=fullstackregistry.azurecr.io/auth-api:$(Build.BuildId)
 
-
-          # Deploy Python Reporting Service
+          # 6️⃣ Deploy Reporting Service
           - task: KubernetesManifest@1
             displayName: Deploy Reporting Service
             inputs:
@@ -200,5 +203,4 @@ stages:
               kubernetesServiceConnection: 'aksConnection'
               manifests: '$(System.DefaultWorkingDirectory)/Angular-React/k8s/reporting-deployment.yaml'
               containers: |
-                    reporting-service=fullstackregistry.azurecr.io/reporting-service:$(Build.BuildId)
-
+                reporting-service=fullstackregistry.azurecr.io/reporting-service:$(Build.BuildId)
