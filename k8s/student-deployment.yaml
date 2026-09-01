@@ -1,8 +1,9 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: student-api  
+  name: student-api
+  labels:
+    app: student-api
 spec:
   replicas: 1
   selector:
@@ -15,18 +16,6 @@ spec:
     spec:
       containers:
       - name: student-api
-        image: fullstackregistry.azurecr.io/student-api:latest
+        image: fullstackregistry.azurecr.io/student-api:$(Build.BuildId)
         ports:
-        - containerPort: 80
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: student-api-service  
-spec:
-  selector:
-    app: student-api
-  ports:
-  - port: 80
-    targetPort: 80
-  type: ClusterIP
+        - containerPort: 8080
