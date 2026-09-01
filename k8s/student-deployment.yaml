@@ -2,8 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: student-api
-  namespace: staging
+  name: student-api  
 spec:
   replicas: 1
   selector:
@@ -23,8 +22,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: student-api-service
-  namespace: staging
+  name: student-api-service  
 spec:
   selector:
     app: student-api
