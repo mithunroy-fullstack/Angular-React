@@ -171,6 +171,7 @@ stages:
             inputs:
               action: deploy
               kubernetesServiceConnection: 'aksConnection'
+              namespace: 'staging'
               manifests: '$(System.DefaultWorkingDirectory)/k8s/student-deployment.yaml'
               containers: |
                 student-api=fullstackregistry.azurecr.io/student-api:$(Build.BuildId)
@@ -181,6 +182,7 @@ stages:
             inputs:
               action: deploy
               kubernetesServiceConnection: 'aksConnection'
+              namespace: 'staging'
               manifests: '$(System.DefaultWorkingDirectory)/k8s/course-deployment.yaml'
               containers: |
                 course-api=fullstackregistry.azurecr.io/course-api:$(Build.BuildId)
@@ -191,6 +193,7 @@ stages:
             inputs:
               action: deploy
               kubernetesServiceConnection: 'aksConnection'
+              namespace: 'staging'
               manifests: '$(System.DefaultWorkingDirectory)/k8s/auth-deployment.yaml'
               containers: |
                 auth-api=fullstackregistry.azurecr.io/auth-api:$(Build.BuildId)
@@ -201,6 +204,7 @@ stages:
             inputs:
               action: deploy
               kubernetesServiceConnection: 'aksConnection'
+              namespace: 'staging'
               manifests: '$(System.DefaultWorkingDirectory)/k8s/reporting-deployment.yaml'
               containers: |
                 reporting-service=fullstackregistry.azurecr.io/reporting-service:$(Build.BuildId)
