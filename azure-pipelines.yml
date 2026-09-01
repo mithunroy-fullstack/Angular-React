@@ -169,7 +169,8 @@ stages:
               kubernetesServiceConnection: 'aksConnection'
               manifests: 'k8s/student-deployment.yaml'
               containers: |
-                fullstackregistry.azurecr.io/student-api:$(Build.BuildId)
+                    student-api=fullstackregistry.azurecr.io/student-api:$(Build.BuildId)
+
 
           - task: KubernetesManifest@1
             displayName: Deploy Course API
@@ -178,7 +179,8 @@ stages:
               kubernetesServiceConnection: 'aksConnection'
               manifests: 'k8s/course-deployment.yaml'
               containers: |
-                fullstackregistry.azurecr.io/course-api:$(Build.BuildId)
+                    course-api=fullstackregistry.azurecr.io/course-api:$(Build.BuildId)
+
 
           - task: KubernetesManifest@1
             displayName: Deploy Auth API
@@ -187,7 +189,8 @@ stages:
               kubernetesServiceConnection: 'aksConnection'
               manifests: 'k8s/auth-deployment.yaml'
               containers: |
-                fullstackregistry.azurecr.io/auth-api:$(Build.BuildId)
+                    auth-api=fullstackregistry.azurecr.io/auth-api:$(Build.BuildId)
+
 
           # Deploy Python Reporting Service
           - task: KubernetesManifest@1
@@ -197,4 +200,5 @@ stages:
               kubernetesServiceConnection: 'aksConnection'
               manifests: 'k8s/reporting-deployment.yaml'
               containers: |
-                fullstackregistry.azurecr.io/reporting-service:$(Build.BuildId)
+                    reporting-service=fullstackregistry.azurecr.io/reporting-service:$(Build.BuildId)
+
