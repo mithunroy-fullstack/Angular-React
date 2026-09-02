@@ -5,7 +5,12 @@ metadata:
   labels:
     app: course-api
 spec:
-  replicas: 1
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: course-api
@@ -14,21 +19,58 @@ spec:
       labels:
         app: course-api
     spec:
+      imagePullSecrets:
+        - name: acr-secret
       containers:
-      - name: course-api
-        image: fullstackregistry.azurecr.io/course-api:latest
-        ports:
-        - containerPort: 8080
+        - name: course-api
+          image: fullstackregistry.azurecr.io/course-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: ConnectionStrings__DefaultConnection
+              value: "Server=<sql-server-host>;Database=CourseDB;User Id=<db-user>;Password=<db-password>;Encrypt=True;TrustServerCertificate=False;"
+            - name: JwtSettings__Issuer
+              value: "AuthService"
+            - name: JwtSettings__Audience
+              value: "AuthServiceUsers"
+            - name: JwtSettings__Key
+              value: "<your-jwt-secret-key>"
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: course-api-service
 spec:
+  type: ClusterIP
   selector:
     app: course-api
   ports:
-  - port: 80
-    targetPort: 8080
-  type: ClusterIP
-
+    - name: http
+      port: 80
+      targetPort: 8080

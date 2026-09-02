@@ -5,7 +5,12 @@ metadata:
   labels:
     app: reporting-service
 spec:
-  replicas: 1
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: reporting-service
@@ -14,20 +19,58 @@ spec:
       labels:
         app: reporting-service
     spec:
+      imagePullSecrets:
+        - name: acr-secret
       containers:
-      - name: reporting-service
-        image: fullstackregistry.azurecr.io/reporting-service:latest
-        ports:
-        - containerPort: 8000
+        - name: reporting-service
+          image: fullstackregistry.azurecr.io/reporting-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: APP_ENV
+              value: "Production"
+            - name: PORT
+              value: "8000"
+            - name: DB_HOST
+              value: "<sql-server-host>"
+            - name: DB_NAME
+              value: "ReportingDB"
+            - name: DB_USER
+              value: "<db-user>"
+            - name: DB_PASSWORD
+              value: "<db-password>"
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: reporting-service
 spec:
+  type: ClusterIP
   selector:
     app: reporting-service
   ports:
-  - port: 8000
-    targetPort: 8000
-  type: ClusterIP
+    - name: http
+      port: 8000
+      targetPort: 8000
