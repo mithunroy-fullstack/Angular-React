@@ -1,7 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-api  
+  name: auth-api
+  labels:
+    app: auth-api
 spec:
   replicas: 1
   selector:
@@ -16,16 +18,16 @@ spec:
       - name: auth-api
         image: fullstackregistry.azurecr.io/auth-api:latest
         ports:
-        - containerPort: 80
+        - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: auth-api-service  
+  name: auth-api-service
 spec:
   selector:
     app: auth-api
   ports:
   - port: 80
-    targetPort: 80
+    targetPort: 8080
   type: ClusterIP

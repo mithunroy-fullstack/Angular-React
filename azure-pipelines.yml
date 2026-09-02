@@ -3,8 +3,16 @@ trigger:
     include:
       - main
 
+pr:
+  branches:
+    include:
+      - main
+
 pool:
   vmImage: 'ubuntu-latest'
+
+variables:
+  imageTag: '$(Build.BuildId)'
 
 stages:
 - stage: BuildAngular
@@ -76,7 +84,6 @@ stages:
           AuthService/AuthService.csproj
         arguments: '--configuration Release --no-restore'
 
-    # 🧩 Build and push Docker images for each API
     - task: Docker@2
       displayName: Build and push Student API image
       inputs:
@@ -85,7 +92,7 @@ stages:
         repository: 'student-api'
         Dockerfile: 'StudentService/Dockerfile'
         tags: |
-          $(Build.BuildId)
+          $(imageTag)
 
     - task: Docker@2
       displayName: Build and push Course API image
@@ -95,7 +102,7 @@ stages:
         repository: 'course-api'
         Dockerfile: 'CourseService/Dockerfile'
         tags: |
-          $(Build.BuildId)
+          $(imageTag)
 
     - task: Docker@2
       displayName: Build and push Auth API image
@@ -105,7 +112,7 @@ stages:
         repository: 'auth-api'
         Dockerfile: 'AuthService/Dockerfile'
         tags: |
-          $(Build.BuildId)
+          $(imageTag)
 
 - stage: BuildReporting
   displayName: Build Reporting Image
@@ -126,7 +133,7 @@ stages:
         repository: 'reporting-service'
         Dockerfile: 'PythonServices/reporting_service/Dockerfile'
         tags: |
-          $(Build.BuildId)
+          $(imageTag)
 
 - stage: Deploy
   displayName: Deploy to AKS Staging
@@ -135,8 +142,10 @@ stages:
     - BuildReact
     - BuildDotNet
     - BuildReporting
+  condition: succeeded()
   jobs:
   - deployment: DeployServices
+    displayName: Deploy services to AKS
     environment: 'staging'
     strategy:
       runOnce:
@@ -145,11 +154,11 @@ stages:
           - checkout: self
 
           - task: DownloadPipelineArtifact@2
+            displayName: Download build artifacts
             inputs:
               buildType: 'current'
               targetPath: '$(Pipeline.Workspace)/artifacts'
 
-          # Student API
           - task: KubernetesManifest@1
             displayName: Deploy Student API
             inputs:
@@ -160,9 +169,8 @@ stages:
                 $(System.DefaultWorkingDirectory)/k8s/student-deployment.yaml
                 $(System.DefaultWorkingDirectory)/k8s/student-service.yaml
               containers: |
-                student-api=fullstackregistry.azurecr.io/student-api:$(Build.BuildId)
+                student-api=fullstackregistry.azurecr.io/student-api:$(imageTag)
 
-          # Course API
           - task: KubernetesManifest@1
             displayName: Deploy Course API
             inputs:
@@ -173,9 +181,8 @@ stages:
                 $(System.DefaultWorkingDirectory)/k8s/course-deployment.yaml
                 $(System.DefaultWorkingDirectory)/k8s/course-service.yaml
               containers: |
-                course-api=fullstackregistry.azurecr.io/course-api:$(Build.BuildId)
+                course-api=fullstackregistry.azurecr.io/course-api:$(imageTag)
 
-          # Auth API
           - task: KubernetesManifest@1
             displayName: Deploy Auth API
             inputs:
@@ -186,9 +193,8 @@ stages:
                 $(System.DefaultWorkingDirectory)/k8s/auth-deployment.yaml
                 $(System.DefaultWorkingDirectory)/k8s/auth-service.yaml
               containers: |
-                auth-api=fullstackregistry.azurecr.io/auth-api:$(Build.BuildId)
+                auth-api=fullstackregistry.azurecr.io/auth-api:$(imageTag)
 
-          # Reporting Service
           - task: KubernetesManifest@1
             displayName: Deploy Reporting Service
             inputs:
@@ -198,4 +204,4 @@ stages:
               manifests: |
                 $(System.DefaultWorkingDirectory)/k8s/reporting-deployment.yaml
               containers: |
-                reporting-service=fullstackregistry.azurecr.io/reporting-service:$(Build.BuildId)
+                reporting-service=fullstackregistry.azurecr.io/reporting-service:$(imageTag)

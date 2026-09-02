@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: student-api
-        image: fullstackregistry.azurecr.io/student-api:$(Build.BuildId)
+        image: fullstackregistry.azurecr.io/student-api:latest
         ports:
         - containerPort: 8080
