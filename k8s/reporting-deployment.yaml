@@ -71,6 +71,5 @@ spec:
   selector:
     app: reporting-service
   ports:
-    - name: http
-      port: 8000
+    - port: 8000
       targetPort: 8000
