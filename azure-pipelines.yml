@@ -13,6 +13,7 @@ pool:
 
 variables:
   imageTag: '$(Build.BuildId)'
+  acrLoginServer: 'fullstackregistry.azurecr.io'
 
 stages:
 - stage: BuildAngular
@@ -28,12 +29,12 @@ stages:
         cd StudentPortal
         npm ci
         npm run build
-      displayName: Build Angular application
+      displayName: Build Angular app
 
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: 'StudentPortal/dist'
-        artifact: angular
+        artifact: 'angular'
 
 - stage: BuildReact
   displayName: Build React
@@ -48,12 +49,12 @@ stages:
         cd course-portal
         npm ci
         npm run build
-      displayName: Build React application
+      displayName: Build React app
 
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: 'course-portal/build'
-        artifact: react
+        artifact: 'react'
 
 - stage: BuildDotNet
   displayName: Build and Package .NET APIs
@@ -62,13 +63,13 @@ stages:
     steps:
     - task: UseDotNet@2
       inputs:
-        packageType: sdk
+        packageType: 'sdk'
         version: '8.x'
 
     - task: DotNetCoreCLI@2
       displayName: Restore .NET projects
       inputs:
-        command: restore
+        command: 'restore'
         projects: |
           StudentService/StudentService.csproj
           CourseService/CourseService.csproj
@@ -77,7 +78,7 @@ stages:
     - task: DotNetCoreCLI@2
       displayName: Build .NET APIs
       inputs:
-        command: build
+        command: 'build'
         projects: |
           StudentService/StudentService.csproj
           CourseService/CourseService.csproj
@@ -87,7 +88,7 @@ stages:
     - task: Docker@2
       displayName: Build and push Student API image
       inputs:
-        command: buildAndPush
+        command: 'buildAndPush'
         containerRegistry: 'dockerRegistryConnection'
         repository: 'student-api'
         Dockerfile: 'StudentService/Dockerfile'
@@ -97,7 +98,7 @@ stages:
     - task: Docker@2
       displayName: Build and push Course API image
       inputs:
-        command: buildAndPush
+        command: 'buildAndPush'
         containerRegistry: 'dockerRegistryConnection'
         repository: 'course-api'
         Dockerfile: 'CourseService/Dockerfile'
@@ -107,7 +108,7 @@ stages:
     - task: Docker@2
       displayName: Build and push Auth API image
       inputs:
-        command: buildAndPush
+        command: 'buildAndPush'
         containerRegistry: 'dockerRegistryConnection'
         repository: 'auth-api'
         Dockerfile: 'AuthService/Dockerfile'
@@ -128,7 +129,7 @@ stages:
     - task: Docker@2
       displayName: Build and push reporting image
       inputs:
-        command: buildAndPush
+        command: 'buildAndPush'
         containerRegistry: 'dockerRegistryConnection'
         repository: 'reporting-service'
         Dockerfile: 'PythonServices/reporting_service/Dockerfile'
@@ -154,7 +155,7 @@ stages:
           - checkout: self
 
           - task: DownloadPipelineArtifact@2
-            displayName: Download build artifacts
+            displayName: Download artifacts
             inputs:
               buildType: 'current'
               targetPath: '$(Pipeline.Workspace)/artifacts'
@@ -162,46 +163,46 @@ stages:
           - task: KubernetesManifest@1
             displayName: Deploy Student API
             inputs:
-              action: deploy
+              action: 'deploy'
               kubernetesServiceConnection: 'aksConnection'
               namespace: 'staging'
               manifests: |
                 $(System.DefaultWorkingDirectory)/k8s/student-deployment.yaml
                 $(System.DefaultWorkingDirectory)/k8s/student-service.yaml
               containers: |
-                student-api=fullstackregistry.azurecr.io/student-api:$(imageTag)
+                student-api=$(acrLoginServer)/student-api:$(imageTag)
 
           - task: KubernetesManifest@1
             displayName: Deploy Course API
             inputs:
-              action: deploy
+              action: 'deploy'
               kubernetesServiceConnection: 'aksConnection'
               namespace: 'staging'
               manifests: |
                 $(System.DefaultWorkingDirectory)/k8s/course-deployment.yaml
                 $(System.DefaultWorkingDirectory)/k8s/course-service.yaml
               containers: |
-                course-api=fullstackregistry.azurecr.io/course-api:$(imageTag)
+                course-api=$(acrLoginServer)/course-api:$(imageTag)
 
           - task: KubernetesManifest@1
             displayName: Deploy Auth API
             inputs:
-              action: deploy
+              action: 'deploy'
               kubernetesServiceConnection: 'aksConnection'
               namespace: 'staging'
               manifests: |
                 $(System.DefaultWorkingDirectory)/k8s/auth-deployment.yaml
                 $(System.DefaultWorkingDirectory)/k8s/auth-service.yaml
               containers: |
-                auth-api=fullstackregistry.azurecr.io/auth-api:$(imageTag)
+                auth-api=$(acrLoginServer)/auth-api:$(imageTag)
 
           - task: KubernetesManifest@1
             displayName: Deploy Reporting Service
             inputs:
-              action: deploy
+              action: 'deploy'
               kubernetesServiceConnection: 'aksConnection'
               namespace: 'staging'
               manifests: |
                 $(System.DefaultWorkingDirectory)/k8s/reporting-deployment.yaml
               containers: |
-                reporting-service=fullstackregistry.azurecr.io/reporting-service:$(imageTag)
+                reporting-service=$(acrLoginServer)/reporting-service:$(imageTag)
