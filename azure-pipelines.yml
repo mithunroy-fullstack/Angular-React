@@ -13,7 +13,7 @@ pool:
 
 variables:
   imageTag: '$(Build.BuildId)'
-  acrLoginServer: 'fullstackregistry.azurecr.io'
+  acrLoginServer: 'fullstackregistry-egdnarcrfxgaare7.azurecr.io'
 
 stages:
 - stage: BuildAngular
@@ -92,6 +92,7 @@ stages:
         containerRegistry: 'dockerRegistryConnection'
         repository: 'student-api'
         Dockerfile: 'StudentService/Dockerfile'
+        buildContext: 'StudentService'
         tags: |
           $(imageTag)
 
@@ -102,6 +103,7 @@ stages:
         containerRegistry: 'dockerRegistryConnection'
         repository: 'course-api'
         Dockerfile: 'CourseService/Dockerfile'
+        buildContext: 'CourseService'
         tags: |
           $(imageTag)
 
@@ -112,6 +114,7 @@ stages:
         containerRegistry: 'dockerRegistryConnection'
         repository: 'auth-api'
         Dockerfile: 'AuthService/Dockerfile'
+        buildContext: 'AuthService'
         tags: |
           $(imageTag)
 
@@ -133,6 +136,7 @@ stages:
         containerRegistry: 'dockerRegistryConnection'
         repository: 'reporting-service'
         Dockerfile: 'PythonServices/reporting_service/Dockerfile'
+        buildContext: 'PythonServices/reporting_service'
         tags: |
           $(imageTag)
 
@@ -159,6 +163,16 @@ stages:
             inputs:
               buildType: 'current'
               targetPath: '$(Pipeline.Workspace)/artifacts'
+
+          - task: KubernetesManifest@1
+            displayName: Configure ACR pull secret
+            inputs:
+              action: 'createSecret'
+              kubernetesServiceConnection: 'aksConnection'
+              namespace: 'staging'
+              secretType: 'dockerRegistry'
+              secretName: 'acr-secret'
+              dockerRegistryEndpoint: 'dockerRegistryConnection'
 
           - task: KubernetesManifest@1
             displayName: Deploy Student API
