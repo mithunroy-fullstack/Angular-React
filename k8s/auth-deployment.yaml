@@ -23,7 +23,7 @@ spec:
         - name: acr-secret
       containers:
         - name: auth-api
-          image: fullstackregistry.azurecr.io/auth-api:latest
+          image: fullstackregistry-egdnarcrfxgaare7.azurecr.io/auth-api:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
