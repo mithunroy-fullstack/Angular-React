@@ -170,7 +170,7 @@ stages:
                 $(System.DefaultWorkingDirectory)/k8s/student-deployment.yaml
                 $(System.DefaultWorkingDirectory)/k8s/student-service.yaml
               containers: |
-                student-api=$(acrLoginServer)/student-api:$(imageTag)
+                $(acrLoginServer)/student-api:$(imageTag)
 
           - task: KubernetesManifest@1
             displayName: Deploy Course API
@@ -182,7 +182,7 @@ stages:
                 $(System.DefaultWorkingDirectory)/k8s/course-deployment.yaml
                 $(System.DefaultWorkingDirectory)/k8s/course-service.yaml
               containers: |
-                course-api=$(acrLoginServer)/course-api:$(imageTag)
+                $(acrLoginServer)/course-api:$(imageTag)
 
           - task: KubernetesManifest@1
             displayName: Deploy Auth API
@@ -194,7 +194,7 @@ stages:
                 $(System.DefaultWorkingDirectory)/k8s/auth-deployment.yaml
                 $(System.DefaultWorkingDirectory)/k8s/auth-service.yaml
               containers: |
-                auth-api=$(acrLoginServer)/auth-api:$(imageTag)
+                $(acrLoginServer)/auth-api:$(imageTag)
 
           - task: KubernetesManifest@1
             displayName: Deploy Reporting Service
@@ -205,4 +205,4 @@ stages:
               manifests: |
                 $(System.DefaultWorkingDirectory)/k8s/reporting-deployment.yaml
               containers: |
-                reporting-service=$(acrLoginServer)/reporting-service:$(imageTag)
+                 $(acrLoginServer)/reporting-service:$(imageTag)
