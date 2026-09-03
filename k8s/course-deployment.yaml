@@ -33,7 +33,10 @@ spec:
             - name: ASPNETCORE_URLS
               value: "http://+:8080"
             - name: ConnectionStrings__DefaultConnection
-              value: "Server=<sql-server-host>;Database=CourseDB;User Id=<db-user>;Password=<db-password>;Encrypt=True;TrustServerCertificate=False;"
+              valueFrom:
+                secretKeyRef:
+                  name: database-secrets
+                  key: course-connection
             - name: JwtSettings__Issuer
               value: "AuthService"
             - name: JwtSettings__Audience
