@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: student-frontend
+  labels:
+    app: student-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: student-frontend
+  template:
+    metadata:
+      labels:
+        app: student-frontend
+    spec:
+      imagePullSecrets:
+        - name: acr-secret
+      containers:
+        - name: student-frontend
+          image: fullstackregistry-egdnarcrfxgaare7.azurecr.io/student-frontend:latest
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: student-frontend-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: student-frontend
+  ports:
+    - port: 80
+      targetPort: 80

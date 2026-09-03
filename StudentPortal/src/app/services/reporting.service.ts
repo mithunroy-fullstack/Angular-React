@@ -8,7 +8,7 @@ import { AttendanceResponse,PredictionsResponse  } from '../models/student';
 })
 export class ReportingService {
   // Set the base URL for the Python container/service
-  private baseUrl = 'http://localhost:8000/api/reports'; 
+  private baseUrl = '/api/reports';
 
   constructor(private http: HttpClient) {}
 

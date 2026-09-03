@@ -139,7 +139,7 @@ export class LoginComponent {
           alert('Redirecting to Course Portal...');
 
           // ✅ Redirect to React CoursePortal
-          window.location.href = `http://localhost:3000/course/dashboard?token=${token}`;
+          window.location.href = `/course/dashboard?token=${token}`;
 
         }
 

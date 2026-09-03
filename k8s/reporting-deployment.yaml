@@ -67,7 +67,7 @@ kind: Service
 metadata:
   name: reporting-service
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: reporting-service
   ports:

@@ -31,6 +31,17 @@ stages:
         npm run build
       displayName: Build Angular app
 
+    - task: Docker@2
+      displayName: Build and push Student frontend image
+      inputs:
+        command: 'buildAndPush'
+        containerRegistry: 'dockerRegistryConnection'
+        repository: 'student-frontend'
+        Dockerfile: 'StudentPortal/Dockerfile'
+        buildContext: 'StudentPortal'
+        tags: |
+          $(imageTag)
+
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: 'StudentPortal/dist'
@@ -50,6 +61,17 @@ stages:
         npm ci
         npm run build
       displayName: Build React app
+
+    - task: Docker@2
+      displayName: Build and push Course frontend image
+      inputs:
+        command: 'buildAndPush'
+        containerRegistry: 'dockerRegistryConnection'
+        repository: 'course-frontend'
+        Dockerfile: 'course-portal/Dockerfile'
+        buildContext: 'course-portal'
+        tags: |
+          $(imageTag)
 
     - task: PublishPipelineArtifact@1
       inputs:
@@ -174,6 +196,53 @@ stages:
               secretName: 'acr-secret'
               dockerRegistryEndpoint: 'dockerRegistryConnection'
 
+          - task: Kubernetes@1
+            displayName: Configure Azure SQL secrets
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: 'aksConnection'
+              namespace: 'staging'
+              command: 'apply'
+              useConfigurationFile: true
+              configurationType: 'inline'
+              inline: |
+                apiVersion: v1
+                kind: Secret
+                metadata:
+                  name: database-secrets
+                  namespace: staging
+                type: Opaque
+                stringData:
+                  auth-connection: "$(AUTH_CONNECTION_STRING)"
+                  student-connection: "$(STUDENT_CONNECTION_STRING)"
+                  course-connection: "$(COURSE_CONNECTION_STRING)"
+            env:
+              AUTH_CONNECTION_STRING: $(AUTH_CONNECTION_STRING)
+              STUDENT_CONNECTION_STRING: $(STUDENT_CONNECTION_STRING)
+              COURSE_CONNECTION_STRING: $(COURSE_CONNECTION_STRING)
+
+          - task: KubernetesManifest@1
+            displayName: Deploy Angular frontend
+            inputs:
+              action: 'deploy'
+              kubernetesServiceConnection: 'aksConnection'
+              namespace: 'staging'
+              manifests: |
+                $(System.DefaultWorkingDirectory)/k8s/student-frontend-deployment.yaml
+              containers: |
+                student-frontend=$(acrLoginServer)/student-frontend:$(imageTag)
+
+          - task: KubernetesManifest@1
+            displayName: Deploy React frontend
+            inputs:
+              action: 'deploy'
+              kubernetesServiceConnection: 'aksConnection'
+              namespace: 'staging'
+              manifests: |
+                $(System.DefaultWorkingDirectory)/k8s/course-frontend-deployment.yaml
+              containers: |
+                course-frontend=$(acrLoginServer)/course-frontend:$(imageTag)
+
           - task: KubernetesManifest@1
             displayName: Deploy Student API
             inputs:
@@ -220,3 +289,4 @@ stages:
                 $(System.DefaultWorkingDirectory)/k8s/reporting-deployment.yaml
               containers: |
                  $(acrLoginServer)/reporting-service:$(imageTag)
+
