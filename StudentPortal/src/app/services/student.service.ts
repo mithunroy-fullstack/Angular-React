@@ -27,7 +27,12 @@ export class StudentService {
 
   // POST: api/Student
   createStudent(student: Student): Observable<Student> {
-    return this.http.post<Student>(this.apiUrl, student);
+    const createPayload = {
+      name: student.name,
+      email: student.email
+    };
+
+    return this.http.post<Student>(this.apiUrl, createPayload);
   }
 
   // PUT: api/Student/{id}
