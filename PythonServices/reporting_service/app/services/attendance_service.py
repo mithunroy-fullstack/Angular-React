@@ -23,6 +23,8 @@ def get_attendance_from_db():
             connection_string,
             flags=re.IGNORECASE,
         )
+        connection_string = re.sub(r"User ID=", "UID=", connection_string, flags=re.IGNORECASE)
+        connection_string = re.sub(r"Initial Catalog=", "DATABASE=", connection_string, flags=re.IGNORECASE)
 
         conn = pyodbc.connect(
             "DRIVER={ODBC Driver 18 for SQL Server};" + connection_string
