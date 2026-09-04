@@ -9,7 +9,7 @@ import { Student } from '../models/student';
 })
 export class StudentService {
 
-  private apiUrl = '/api/Student';
+  private apiUrl = '/api/Student/';
   //private apiUrl = 'http://localhost:5258/api/Student';
   //private apiUrl = 'http://localhost:8001/api/reports/students';
 
