@@ -1,6 +1,7 @@
 import pyodbc
 import pandas as pd
 import os
+import re
 
 def get_attendance_from_db():
     try:
@@ -15,10 +16,18 @@ def get_attendance_from_db():
                 "TrustServerCertificate=yes;"
             )
 
+        connection_string = re.sub(r"Encrypt=True", "Encrypt=yes", connection_string, flags=re.IGNORECASE)
+        connection_string = re.sub(
+            r"TrustServerCertificate=False",
+            "TrustServerCertificate=no",
+            connection_string,
+            flags=re.IGNORECASE,
+        )
+
         conn = pyodbc.connect(
             "DRIVER={ODBC Driver 18 for SQL Server};" + connection_string
         )
-        query = "Select a.StudentId,s.Name,a.Status,a.AttendanceDate from [StudentDB].[dbo].[Students] s inner join [StudentDB].[dbo].[Attendance] a on s.Id=a.StudentId"
+        query = "Select a.StudentId,s.Name,a.Status,a.AttendanceDate from [dbo].[Students] s inner join [dbo].[Attendance] a on s.Id=a.StudentId"
         df = pd.read_sql(query, conn)
         conn.close()
         return df
