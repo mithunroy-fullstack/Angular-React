@@ -14,3 +14,7 @@ env/
 
 # IDE/editor files
 .vscode/
+
+# .NET build output
+**/bin/
+**/obj/

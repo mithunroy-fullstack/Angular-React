@@ -222,6 +222,29 @@ stages:
               COURSE_CONNECTION_STRING: $(COURSE_CONNECTION_STRING)
 
           - task: KubernetesManifest@1
+            displayName: Make backend services internal
+            inputs:
+              action: 'deploy'
+              kubernetesServiceConnection: 'aksConnection'
+              namespace: 'staging'
+              manifests: |
+                $(System.DefaultWorkingDirectory)/k8s/auth-service.yaml
+                $(System.DefaultWorkingDirectory)/k8s/student-service.yaml
+                $(System.DefaultWorkingDirectory)/k8s/course-service.yaml
+                $(System.DefaultWorkingDirectory)/k8s/reporting-service.yaml
+
+          - task: Kubernetes@1
+            displayName: Apply Angular frontend service
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: 'aksConnection'
+              namespace: 'staging'
+              command: 'apply'
+              useConfigurationFile: true
+              configurationType: 'file'
+              configuration: '$(System.DefaultWorkingDirectory)/k8s/student-frontend-service.yaml'
+
+          - task: KubernetesManifest@1
             displayName: Deploy Angular frontend
             inputs:
               action: 'deploy'
@@ -231,6 +254,17 @@ stages:
                 $(System.DefaultWorkingDirectory)/k8s/student-frontend-deployment.yaml
               containers: |
                 student-frontend=$(acrLoginServer)/student-frontend:$(imageTag)
+
+          - task: Kubernetes@1
+            displayName: Apply React frontend service
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: 'aksConnection'
+              namespace: 'staging'
+              command: 'apply'
+              useConfigurationFile: true
+              configurationType: 'file'
+              configuration: '$(System.DefaultWorkingDirectory)/k8s/course-frontend-service.yaml'
 
           - task: KubernetesManifest@1
             displayName: Deploy React frontend
