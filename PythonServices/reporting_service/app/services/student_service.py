@@ -1,7 +1,11 @@
 import httpx
 import pandas as pd
+import os
 
-STUDENT_SERVICE_URL = "http://host.docker.internal:5258"
+STUDENT_SERVICE_URL = os.getenv(
+    "STUDENT_SERVICE_URL",
+    "http://student-api-service.staging.svc.cluster.local",
+)
 
 async def get_performance_from_service(token: str):
     headers = {"Authorization": f"Bearer {token}"}

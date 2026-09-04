@@ -32,14 +32,13 @@ spec:
               value: "Production"
             - name: PORT
               value: "8000"
-            - name: DB_HOST
-              value: "<sql-server-host>"
-            - name: DB_NAME
-              value: "ReportingDB"
-            - name: DB_USER
-              value: "<db-user>"
-            - name: DB_PASSWORD
-              value: "<db-password>"
+            - name: DB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: database-secrets
+                  key: student-connection
+            - name: STUDENT_SERVICE_URL
+              value: "http://student-api-service.staging.svc.cluster.local"
           readinessProbe:
             tcpSocket:
               port: 8000

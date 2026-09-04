@@ -1,16 +1,22 @@
 import pyodbc
 import pandas as pd
+import os
 
 def get_attendance_from_db():
     try:
+        connection_string = os.getenv("DB_CONNECTION_STRING")
+        if not connection_string:
+            connection_string = (
+                "SERVER=host.docker.internal,1434;"
+                "DATABASE=StudentDB;"
+                "UID=python_user;"
+                "PWD=Py@12345;"
+                "Encrypt=yes;"
+                "TrustServerCertificate=yes;"
+            )
+
         conn = pyodbc.connect(
-            'DRIVER={ODBC Driver 18 for SQL Server};'
-            'SERVER=host.docker.internal,1434;'
-            'DATABASE=StudentDB;'
-            'UID=python_user;'             # <--- Change 1: Add your SQL Username
-            'PWD=Py@12345;'    # <--- Change 2: Add your SQL Password
-            'Encrypt=yes;'                 # Required for ODBC Driver 18
-            'TrustServerCertificate=yes;'
+            "DRIVER={ODBC Driver 18 for SQL Server};" + connection_string
         )
         query = "Select a.StudentId,s.Name,a.Status,a.AttendanceDate from [StudentDB].[dbo].[Students] s inner join [StudentDB].[dbo].[Attendance] a on s.Id=a.StudentId"
         df = pd.read_sql(query, conn)
