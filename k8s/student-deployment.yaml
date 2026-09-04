@@ -41,8 +41,6 @@ spec:
               value: "AuthService"
             - name: JwtSettings__Audience
               value: "AuthServiceUsers"
-            - name: JwtSettings__Key
-              value: "<your-jwt-secret-key>"
           readinessProbe:
             tcpSocket:
               port: 8080
