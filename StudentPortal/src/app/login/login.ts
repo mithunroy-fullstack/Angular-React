@@ -23,6 +23,7 @@ import { CommonModule } from '@angular/common';
 export class LoginComponent {
 
   loginForm: FormGroup;
+  private readonly coursePortalUrl = 'http://172.198.227.21';
 
   constructor(
     private fb: FormBuilder,
@@ -139,7 +140,7 @@ export class LoginComponent {
           alert('Redirecting to Course Portal...');
 
           // ✅ Redirect to React CoursePortal
-          window.location.href = `/course/dashboard?token=${token}`;
+          window.location.href = `${this.coursePortalUrl}/course/dashboard?token=${encodeURIComponent(token)}`;
 
         }
 

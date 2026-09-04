@@ -44,8 +44,9 @@ export class AuthService {
       const roleClaim =
         'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
 
-      // Return role
-      return payload[roleClaim] || payload['role'] || '';
+      // ASP.NET Core may serialize one role as a string or multiple roles as an array.
+      const roles = payload[roleClaim] || payload['role'] || [];
+      return Array.isArray(roles) ? roles[0] || '' : roles;
 
     } catch (error) {
 
