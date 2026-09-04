@@ -1,7 +1,39 @@
 import pyodbc
 import pandas as pd
 import os
-import re
+
+def _build_odbc_connection_string(connection_string):
+    values = {}
+    for part in connection_string.split(";"):
+        if "=" in part:
+            name, value = part.split("=", 1)
+            values[name.strip().lower()] = value.strip()
+
+    server = values.get("server")
+    database = values.get("initial catalog") or values.get("database")
+    user = values.get("user id") or values.get("uid")
+    password = values.get("password") or values.get("pwd")
+
+    missing = [
+        name for name, value in {
+            "Server": server,
+            "Database": database,
+            "User ID": user,
+            "Password": password,
+        }.items() if not value
+    ]
+    if missing:
+        raise ValueError(f"Database connection string is missing: {', '.join(missing)}")
+
+    return (
+        "DRIVER={ODBC Driver 18 for SQL Server};"
+        f"SERVER={server};"
+        f"DATABASE={database};"
+        f"UID={user};"
+        f"PWD={password};"
+        "Encrypt=yes;"
+        "TrustServerCertificate=no;"
+    )
 
 def get_attendance_from_db():
     try:
@@ -16,19 +48,7 @@ def get_attendance_from_db():
                 "TrustServerCertificate=yes;"
             )
 
-        connection_string = re.sub(r"Encrypt=True", "Encrypt=yes", connection_string, flags=re.IGNORECASE)
-        connection_string = re.sub(
-            r"TrustServerCertificate=False",
-            "TrustServerCertificate=no",
-            connection_string,
-            flags=re.IGNORECASE,
-        )
-        connection_string = re.sub(r"User ID=", "UID=", connection_string, flags=re.IGNORECASE)
-        connection_string = re.sub(r"Initial Catalog=", "DATABASE=", connection_string, flags=re.IGNORECASE)
-
-        conn = pyodbc.connect(
-            "DRIVER={ODBC Driver 18 for SQL Server};" + connection_string
-        )
+        conn = pyodbc.connect(_build_odbc_connection_string(connection_string))
         query = "Select a.StudentId,s.Name,a.Status,a.AttendanceDate from [dbo].[Students] s inner join [dbo].[Attendance] a on s.Id=a.StudentId"
         df = pd.read_sql(query, conn)
         conn.close()
