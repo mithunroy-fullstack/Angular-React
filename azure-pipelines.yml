@@ -253,7 +253,7 @@ stages:
               manifests: |
                 $(System.DefaultWorkingDirectory)/k8s/student-frontend-deployment.yaml
               containers: |
-                student-frontend=$(acrLoginServer)/student-frontend:$(imageTag)
+                $(acrLoginServer)/student-frontend:$(imageTag)
 
           - task: Kubernetes@1
             displayName: Apply React frontend service
@@ -275,7 +275,7 @@ stages:
               manifests: |
                 $(System.DefaultWorkingDirectory)/k8s/course-frontend-deployment.yaml
               containers: |
-                course-frontend=$(acrLoginServer)/course-frontend:$(imageTag)
+                $(acrLoginServer)/course-frontend:$(imageTag)
 
           - task: KubernetesManifest@1
             displayName: Deploy Student API
