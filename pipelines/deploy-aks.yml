@@ -1,6 +1,8 @@
 parameters:
 - name: deploymentEnvironment
   type: string
+- name: kubernetesServiceConnection
+  type: string
 - name: studentFrontendServiceManifest
   type: string
 - name: courseFrontendServiceManifest
@@ -26,7 +28,7 @@ jobs:
           displayName: Ensure namespace exists
           inputs:
             connectionType: 'Kubernetes Service Connection'
-            kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+            kubernetesServiceEndpoint: '${{ parameters.kubernetesServiceConnection }}'
             command: 'apply'
             useConfigurationFile: true
             configurationType: 'inline'
@@ -40,7 +42,7 @@ jobs:
           displayName: Configure ACR pull secret
           inputs:
             action: 'createSecret'
-            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            kubernetesServiceConnection: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             secretType: 'dockerRegistry'
             secretName: 'acr-secret'
@@ -50,7 +52,7 @@ jobs:
           displayName: Configure Azure SQL secrets
           inputs:
             connectionType: 'Kubernetes Service Connection'
-            kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+            kubernetesServiceEndpoint: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             command: 'apply'
             useConfigurationFile: true
@@ -75,7 +77,7 @@ jobs:
           displayName: Deploy backend services
           inputs:
             action: 'deploy'
-            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            kubernetesServiceConnection: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             manifests: |
               $(System.DefaultWorkingDirectory)/k8s/auth-service.yaml
@@ -87,7 +89,7 @@ jobs:
           displayName: Apply Angular frontend service
           inputs:
             connectionType: 'Kubernetes Service Connection'
-            kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+            kubernetesServiceEndpoint: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             command: 'apply'
             useConfigurationFile: true
@@ -98,7 +100,7 @@ jobs:
           displayName: Deploy Angular frontend
           inputs:
             action: 'deploy'
-            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            kubernetesServiceConnection: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             manifests: |
               $(System.DefaultWorkingDirectory)/k8s/student-frontend-deployment.yaml
@@ -109,7 +111,7 @@ jobs:
           displayName: Apply React frontend service
           inputs:
             connectionType: 'Kubernetes Service Connection'
-            kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+            kubernetesServiceEndpoint: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             command: 'apply'
             useConfigurationFile: true
@@ -120,7 +122,7 @@ jobs:
           displayName: Deploy React frontend
           inputs:
             action: 'deploy'
-            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            kubernetesServiceConnection: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             manifests: |
               $(System.DefaultWorkingDirectory)/k8s/course-frontend-deployment.yaml
@@ -131,7 +133,7 @@ jobs:
           displayName: Deploy Student API
           inputs:
             action: 'deploy'
-            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            kubernetesServiceConnection: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             manifests: |
               $(System.DefaultWorkingDirectory)/k8s/student-deployment.yaml
@@ -143,7 +145,7 @@ jobs:
           displayName: Deploy Course API
           inputs:
             action: 'deploy'
-            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            kubernetesServiceConnection: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             manifests: |
               $(System.DefaultWorkingDirectory)/k8s/course-deployment.yaml
@@ -155,7 +157,7 @@ jobs:
           displayName: Deploy Auth API
           inputs:
             action: 'deploy'
-            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            kubernetesServiceConnection: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             manifests: |
               $(System.DefaultWorkingDirectory)/k8s/auth-deployment.yaml
@@ -167,7 +169,7 @@ jobs:
           displayName: Deploy Reporting Service
           inputs:
             action: 'deploy'
-            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            kubernetesServiceConnection: '${{ parameters.kubernetesServiceConnection }}'
             namespace: '$(targetNamespace)'
             manifests: |
               $(System.DefaultWorkingDirectory)/k8s/reporting-deployment.yaml

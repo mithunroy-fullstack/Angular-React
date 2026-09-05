@@ -181,6 +181,7 @@ stages:
   - template: pipelines/deploy-aks.yml
     parameters:
       deploymentEnvironment: 'staging'
+      kubernetesServiceConnection: 'aksConnection'
       studentFrontendServiceManifest: 'k8s/student-frontend-service-staging.yaml'
       courseFrontendServiceManifest: 'k8s/course-frontend-service-staging.yaml'
 
@@ -199,6 +200,7 @@ stages:
   - template: pipelines/deploy-aks.yml
     parameters:
       deploymentEnvironment: 'production'
+      kubernetesServiceConnection: 'aksProductionConnection'
       studentFrontendServiceManifest: 'k8s/student-frontend-service.yaml'
       courseFrontendServiceManifest: 'k8s/course-frontend-service.yaml'
 
