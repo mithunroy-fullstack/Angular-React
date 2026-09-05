@@ -23,7 +23,10 @@ import { CommonModule } from '@angular/common';
 export class LoginComponent {
 
   loginForm: FormGroup;
-  private readonly coursePortalUrl = 'http://172.198.227.21';
+  private readonly coursePortalUrl =
+    window.location.hostname === '4.224.64.92'
+      ? 'http://135.13.182.59'
+      : 'http://172.198.227.21';
 
   constructor(
     private fb: FormBuilder,
