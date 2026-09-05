@@ -38,7 +38,7 @@ spec:
                   name: database-secrets
                   key: student-connection
             - name: STUDENT_SERVICE_URL
-              value: "http://student-api-service.staging.svc.cluster.local"
+              value: "http://student-api-service"
           readinessProbe:
             tcpSocket:
               port: 8000

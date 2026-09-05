@@ -1,0 +1,175 @@
+parameters:
+- name: deploymentEnvironment
+  type: string
+- name: studentFrontendServiceManifest
+  type: string
+- name: courseFrontendServiceManifest
+  type: string
+
+jobs:
+- deployment: DeployServices
+  displayName: Deploy services to AKS
+  environment: '${{ parameters.deploymentEnvironment }}'
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - checkout: self
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download artifacts
+          inputs:
+            buildType: 'current'
+            targetPath: '$(Pipeline.Workspace)/artifacts'
+
+        - task: Kubernetes@1
+          displayName: Ensure namespace exists
+          inputs:
+            connectionType: 'Kubernetes Service Connection'
+            kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+            command: 'apply'
+            useConfigurationFile: true
+            configurationType: 'inline'
+            inline: |
+              apiVersion: v1
+              kind: Namespace
+              metadata:
+                name: $(targetNamespace)
+
+        - task: KubernetesManifest@1
+          displayName: Configure ACR pull secret
+          inputs:
+            action: 'createSecret'
+            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            secretType: 'dockerRegistry'
+            secretName: 'acr-secret'
+            dockerRegistryEndpoint: 'dockerRegistryConnection'
+
+        - task: Kubernetes@1
+          displayName: Configure Azure SQL secrets
+          inputs:
+            connectionType: 'Kubernetes Service Connection'
+            kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            command: 'apply'
+            useConfigurationFile: true
+            configurationType: 'inline'
+            inline: |
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: database-secrets
+                namespace: $(targetNamespace)
+              type: Opaque
+              stringData:
+                auth-connection: "$(AUTH_CONNECTION_STRING)"
+                student-connection: "$(STUDENT_CONNECTION_STRING)"
+                course-connection: "$(COURSE_CONNECTION_STRING)"
+          env:
+            AUTH_CONNECTION_STRING: $(AUTH_CONNECTION_STRING)
+            STUDENT_CONNECTION_STRING: $(STUDENT_CONNECTION_STRING)
+            COURSE_CONNECTION_STRING: $(COURSE_CONNECTION_STRING)
+
+        - task: KubernetesManifest@1
+          displayName: Deploy backend services
+          inputs:
+            action: 'deploy'
+            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            manifests: |
+              $(System.DefaultWorkingDirectory)/k8s/auth-service.yaml
+              $(System.DefaultWorkingDirectory)/k8s/student-service.yaml
+              $(System.DefaultWorkingDirectory)/k8s/course-service.yaml
+              $(System.DefaultWorkingDirectory)/k8s/reporting-service.yaml
+
+        - task: Kubernetes@1
+          displayName: Apply Angular frontend service
+          inputs:
+            connectionType: 'Kubernetes Service Connection'
+            kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            command: 'apply'
+            useConfigurationFile: true
+            configurationType: 'file'
+            configuration: '$(System.DefaultWorkingDirectory)/${{ parameters.studentFrontendServiceManifest }}'
+
+        - task: KubernetesManifest@1
+          displayName: Deploy Angular frontend
+          inputs:
+            action: 'deploy'
+            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            manifests: |
+              $(System.DefaultWorkingDirectory)/k8s/student-frontend-deployment.yaml
+            containers: |
+              $(acrLoginServer)/student-frontend:$(imageTag)
+
+        - task: Kubernetes@1
+          displayName: Apply React frontend service
+          inputs:
+            connectionType: 'Kubernetes Service Connection'
+            kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            command: 'apply'
+            useConfigurationFile: true
+            configurationType: 'file'
+            configuration: '$(System.DefaultWorkingDirectory)/${{ parameters.courseFrontendServiceManifest }}'
+
+        - task: KubernetesManifest@1
+          displayName: Deploy React frontend
+          inputs:
+            action: 'deploy'
+            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            manifests: |
+              $(System.DefaultWorkingDirectory)/k8s/course-frontend-deployment.yaml
+            containers: |
+              $(acrLoginServer)/course-frontend:$(imageTag)
+
+        - task: KubernetesManifest@1
+          displayName: Deploy Student API
+          inputs:
+            action: 'deploy'
+            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            manifests: |
+              $(System.DefaultWorkingDirectory)/k8s/student-deployment.yaml
+              $(System.DefaultWorkingDirectory)/k8s/student-service.yaml
+            containers: |
+              $(acrLoginServer)/student-api:$(imageTag)
+
+        - task: KubernetesManifest@1
+          displayName: Deploy Course API
+          inputs:
+            action: 'deploy'
+            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            manifests: |
+              $(System.DefaultWorkingDirectory)/k8s/course-deployment.yaml
+              $(System.DefaultWorkingDirectory)/k8s/course-service.yaml
+            containers: |
+              $(acrLoginServer)/course-api:$(imageTag)
+
+        - task: KubernetesManifest@1
+          displayName: Deploy Auth API
+          inputs:
+            action: 'deploy'
+            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            manifests: |
+              $(System.DefaultWorkingDirectory)/k8s/auth-deployment.yaml
+              $(System.DefaultWorkingDirectory)/k8s/auth-service.yaml
+            containers: |
+              $(acrLoginServer)/auth-api:$(imageTag)
+
+        - task: KubernetesManifest@1
+          displayName: Deploy Reporting Service
+          inputs:
+            action: 'deploy'
+            kubernetesServiceConnection: '$(kubernetesServiceConnection)'
+            namespace: '$(targetNamespace)'
+            manifests: |
+              $(System.DefaultWorkingDirectory)/k8s/reporting-deployment.yaml
+            containers: |
+              $(acrLoginServer)/reporting-service:$(imageTag)

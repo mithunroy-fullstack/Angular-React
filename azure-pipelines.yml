@@ -162,7 +162,7 @@ stages:
         tags: |
           $(imageTag)
 
-- stage: Deploy
+- stage: DeployStaging
   displayName: Deploy to AKS Staging
   dependsOn:
     - BuildAngular
@@ -170,157 +170,35 @@ stages:
     - BuildDotNet
     - BuildReporting
   condition: succeeded()
+  variables:
+  - name: targetNamespace
+    value: 'staging'
+  - name: kubernetesServiceConnection
+    value: 'aksConnection'
+  - name: deploymentEnvironment
+    value: 'staging'
   jobs:
-  - deployment: DeployServices
-    displayName: Deploy services to AKS
-    environment: 'staging'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
+  - template: pipelines/deploy-aks.yml
+    parameters:
+      deploymentEnvironment: 'staging'
+      studentFrontendServiceManifest: 'k8s/student-frontend-service-staging.yaml'
+      courseFrontendServiceManifest: 'k8s/course-frontend-service-staging.yaml'
 
-          - task: DownloadPipelineArtifact@2
-            displayName: Download artifacts
-            inputs:
-              buildType: 'current'
-              targetPath: '$(Pipeline.Workspace)/artifacts'
-
-          - task: KubernetesManifest@1
-            displayName: Configure ACR pull secret
-            inputs:
-              action: 'createSecret'
-              kubernetesServiceConnection: 'aksConnection'
-              namespace: 'staging'
-              secretType: 'dockerRegistry'
-              secretName: 'acr-secret'
-              dockerRegistryEndpoint: 'dockerRegistryConnection'
-
-          - task: Kubernetes@1
-            displayName: Configure Azure SQL secrets
-            inputs:
-              connectionType: 'Kubernetes Service Connection'
-              kubernetesServiceEndpoint: 'aksConnection'
-              namespace: 'staging'
-              command: 'apply'
-              useConfigurationFile: true
-              configurationType: 'inline'
-              inline: |
-                apiVersion: v1
-                kind: Secret
-                metadata:
-                  name: database-secrets
-                  namespace: staging
-                type: Opaque
-                stringData:
-                  auth-connection: "$(AUTH_CONNECTION_STRING)"
-                  student-connection: "$(STUDENT_CONNECTION_STRING)"
-                  course-connection: "$(COURSE_CONNECTION_STRING)"
-            env:
-              AUTH_CONNECTION_STRING: $(AUTH_CONNECTION_STRING)
-              STUDENT_CONNECTION_STRING: $(STUDENT_CONNECTION_STRING)
-              COURSE_CONNECTION_STRING: $(COURSE_CONNECTION_STRING)
-
-          - task: KubernetesManifest@1
-            displayName: Make backend services internal
-            inputs:
-              action: 'deploy'
-              kubernetesServiceConnection: 'aksConnection'
-              namespace: 'staging'
-              manifests: |
-                $(System.DefaultWorkingDirectory)/k8s/auth-service.yaml
-                $(System.DefaultWorkingDirectory)/k8s/student-service.yaml
-                $(System.DefaultWorkingDirectory)/k8s/course-service.yaml
-                $(System.DefaultWorkingDirectory)/k8s/reporting-service.yaml
-
-          - task: Kubernetes@1
-            displayName: Apply Angular frontend service
-            inputs:
-              connectionType: 'Kubernetes Service Connection'
-              kubernetesServiceEndpoint: 'aksConnection'
-              namespace: 'staging'
-              command: 'apply'
-              useConfigurationFile: true
-              configurationType: 'file'
-              configuration: '$(System.DefaultWorkingDirectory)/k8s/student-frontend-service.yaml'
-
-          - task: KubernetesManifest@1
-            displayName: Deploy Angular frontend
-            inputs:
-              action: 'deploy'
-              kubernetesServiceConnection: 'aksConnection'
-              namespace: 'staging'
-              manifests: |
-                $(System.DefaultWorkingDirectory)/k8s/student-frontend-deployment.yaml
-              containers: |
-                $(acrLoginServer)/student-frontend:$(imageTag)
-
-          - task: Kubernetes@1
-            displayName: Apply React frontend service
-            inputs:
-              connectionType: 'Kubernetes Service Connection'
-              kubernetesServiceEndpoint: 'aksConnection'
-              namespace: 'staging'
-              command: 'apply'
-              useConfigurationFile: true
-              configurationType: 'file'
-              configuration: '$(System.DefaultWorkingDirectory)/k8s/course-frontend-service.yaml'
-
-          - task: KubernetesManifest@1
-            displayName: Deploy React frontend
-            inputs:
-              action: 'deploy'
-              kubernetesServiceConnection: 'aksConnection'
-              namespace: 'staging'
-              manifests: |
-                $(System.DefaultWorkingDirectory)/k8s/course-frontend-deployment.yaml
-              containers: |
-                $(acrLoginServer)/course-frontend:$(imageTag)
-
-          - task: KubernetesManifest@1
-            displayName: Deploy Student API
-            inputs:
-              action: 'deploy'
-              kubernetesServiceConnection: 'aksConnection'
-              namespace: 'staging'
-              manifests: |
-                $(System.DefaultWorkingDirectory)/k8s/student-deployment.yaml
-                $(System.DefaultWorkingDirectory)/k8s/student-service.yaml
-              containers: |
-                $(acrLoginServer)/student-api:$(imageTag)
-
-          - task: KubernetesManifest@1
-            displayName: Deploy Course API
-            inputs:
-              action: 'deploy'
-              kubernetesServiceConnection: 'aksConnection'
-              namespace: 'staging'
-              manifests: |
-                $(System.DefaultWorkingDirectory)/k8s/course-deployment.yaml
-                $(System.DefaultWorkingDirectory)/k8s/course-service.yaml
-              containers: |
-                $(acrLoginServer)/course-api:$(imageTag)
-
-          - task: KubernetesManifest@1
-            displayName: Deploy Auth API
-            inputs:
-              action: 'deploy'
-              kubernetesServiceConnection: 'aksConnection'
-              namespace: 'staging'
-              manifests: |
-                $(System.DefaultWorkingDirectory)/k8s/auth-deployment.yaml
-                $(System.DefaultWorkingDirectory)/k8s/auth-service.yaml
-              containers: |
-                $(acrLoginServer)/auth-api:$(imageTag)
-
-          - task: KubernetesManifest@1
-            displayName: Deploy Reporting Service
-            inputs:
-              action: 'deploy'
-              kubernetesServiceConnection: 'aksConnection'
-              namespace: 'staging'
-              manifests: |
-                $(System.DefaultWorkingDirectory)/k8s/reporting-deployment.yaml
-              containers: |
-                 $(acrLoginServer)/reporting-service:$(imageTag)
+- stage: DeployProduction
+  displayName: Deploy to AKS Production
+  dependsOn: DeployStaging
+  condition: succeeded()
+  variables:
+  - name: targetNamespace
+    value: 'production'
+  - name: kubernetesServiceConnection
+    value: 'aksProductionConnection'
+  - name: deploymentEnvironment
+    value: 'production'
+  jobs:
+  - template: pipelines/deploy-aks.yml
+    parameters:
+      deploymentEnvironment: 'production'
+      studentFrontendServiceManifest: 'k8s/student-frontend-service.yaml'
+      courseFrontendServiceManifest: 'k8s/course-frontend-service.yaml'
 
